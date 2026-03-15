@@ -51,7 +51,7 @@ def run_pipeline(step: str = "all"):
 
     elapsed = time.time() - t0
     print(f"\n{'=' * 60}")
-    print(f"  ✅ Pipeline terminé en {elapsed:.1f}s")
+    print(f"  ✅ Pipeline completed in {elapsed:.1f}s")
     print(f"{'=' * 60}")
 
 
