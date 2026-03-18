@@ -65,7 +65,10 @@ def _drop_internal_columns(df: pd.DataFrame) -> pd.DataFrame:
     # Steps: 1. Find columns that start with '_' (list comprehension on df.columns)
     #        2. Drop them with df.drop(columns=...)
     #        3. Print how many were removed, then return
-    raise NotImplementedError("TODO: Implement _drop_internal_columns()")
+    internal_cols = [col for col in df.columns if col.startswith("_")]
+    df = df.drop(columns=internal_cols)
+    print(f"Dropped {len(internal_cols)} internal columns: {internal_cols}")
+    return df
 
 
 def _load_to_silver(df: pd.DataFrame, table_name: str, if_exists: str = "replace"):
@@ -110,19 +113,23 @@ def transform_products() -> pd.DataFrame:
     df = _read_bronze("products")
 
     # TODO: Step 1 — Drop internal columns (use the helper you wrote above)
+    df = _drop_internal_columns(df)
 
     # TODO: Step 2 — Normalize the 'tags' column
     # The tags use '|' as separator — replace with ', ' for cleanliness
     # Look at: .str.replace()
+    df["tags"] = df["tags"].str.replace("|", ", ", regex=False)
 
     # TODO: Step 3 — Validate price_usd (remove rows where price <= 0)
+    df = df[df["price_usd"] > 0]
 
     # TODO: Step 4 — Convert boolean columns (is_active, is_hype_product)
     # Look at: .astype(bool)
+    df["is_active"] = df["is_active"].astype(bool)
+    df["is_hype_product"] = df["is_hype_product"].astype(bool)
 
     # TODO: Step 5 — Load into Silver as "dim_products"
-
-    raise NotImplementedError("TODO: Implement transform_products()")
+    _load_to_silver(df, "dim_products")
     return df
 
 
@@ -148,15 +155,18 @@ def transform_users() -> pd.DataFrame:
     df = _read_bronze("users")
 
     # TODO: Step 1 — Drop internal columns (especially PII: passwords, IPs, fingerprints)
+    df = _drop_internal_columns(df)
 
     # TODO: Step 2 — Replace NULL loyalty_tier with 'none'
     # Look at: .fillna()
-
+    df["loyalty_tier"] = df["loyalty_tier"].fillna("none")
+    
     # TODO: Step 3 — Normalize emails (lowercase + strip whitespace)
+    df["email"] = df["email"].str.lower().str.strip()
 
     # TODO: Step 4 — Load into Silver as "dim_users"
+    _load_to_silver(df, "dim_users")
 
-    raise NotImplementedError("TODO: Implement transform_users()")
     return df
 
 
@@ -180,20 +190,33 @@ def transform_orders() -> pd.DataFrame:
     df = _read_bronze("orders")
 
     # TODO: Step 1 — Drop internal columns
+    df = _drop_internal_columns(df)
 
     # TODO: Step 2 — Validate statuses
     # Only keep rows with a valid status. The valid set is in the docstring above.
     # Look at: .isin() and boolean indexing
+    valid_statuses = [
+    "delivered",
+    "shipped",
+    "processing",
+    "returned",
+    "cancelled",
+    "chargeback"
+    ]
+
+    df = df[df["status"].isin(valid_statuses)]
 
     # TODO: Step 3 — Convert order_date to a proper datetime type
     # Look at: pd.to_datetime()
+    df["order_date"] = pd.to_datetime(df["order_date"])
 
     # TODO: Step 4 — Replace NULL coupon_code with empty string
     # Look at: .fillna()
+    df["coupon_code"] = df["coupon_code"].fillna("")
 
     # TODO: Step 5 — Load into Silver as "fct_orders"
+    _load_to_silver(df, "fct_orders")
 
-    raise NotImplementedError("TODO: Implement transform_orders()")
     return df
 
 
@@ -214,16 +237,27 @@ def transform_order_line_items() -> pd.DataFrame:
     df = _read_bronze("order_line_items")
 
     # TODO: Step 1 — Drop internal columns
-
+    df = _drop_internal_columns(df)
+    
     # TODO: Step 2 — Validate quantity > 0 (remove invalid rows)
+    df = df[df["quantity"] > 0]
 
     # TODO: Step 3 — Verify line_total_usd ≈ unit_price_usd * quantity
     # Compute the difference, flag rows where abs(diff) > 0.01, then clean up
     # This is a data quality check — print how many bad rows you find
+    expected = df["unit_price_usd"] * df["quantity"]
+
+    diff = (df["line_total_usd"] - expected).abs()
+
+    bad_rows = df[diff > 0.01]
+
+    print(f"⚠️ {len(bad_rows)} inconsistent line_total_usd rows")
+
+    df = df[diff <= 0.01]
 
     # TODO: Step 4 — Load into Silver as "fct_order_lines"
+    _load_to_silver(df, "fct_order_lines")
 
-    raise NotImplementedError("TODO: Implement transform_order_line_items()")
     return df
 
 
@@ -246,8 +280,10 @@ def transform_all() -> dict[str, pd.DataFrame]:
     # TODO: Call each transform_*() function and store the result in the dict
     # There are 4 functions to call, each returns a DataFrame
     # Keys should match the Silver table names: dim_products, dim_users, fct_orders, fct_order_lines
-
-    raise NotImplementedError("TODO: Implement transform_all()")
+    results["fct_orders"] = transform_orders()
+    results["fct_order_lines"] = transform_order_line_items()
+    results["dim_products"] = transform_products()
+    results["dim_users"] = transform_users()
 
     print(f"\n  ✅ Transformation complete — {len(results)} tables in {SILVER_SCHEMA}")
     return results
