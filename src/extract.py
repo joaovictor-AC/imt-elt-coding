@@ -250,6 +250,11 @@ def extract_users() -> pd.DataFrame:
     Returns:
         pd.DataFrame: The user data.
     """
+    df = _read_csv_from_s3("raw/users/users.csv")
+    print(f"users: {len(df)} rows, {len(df.columns)} columns")
+    _load_to_bronze(df, "users")
+    return df
+
     # TODO: Same pattern as extract_products()
     s3_key = f"{S3_PREFIX}/users/users.csv"
     df_users = _read_csv_from_s3(s3_key)
