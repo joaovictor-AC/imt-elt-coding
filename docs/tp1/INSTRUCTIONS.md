@@ -236,11 +236,28 @@ print(df_click.head())
 ### 1.5 Questions to answer (write down your observations)
 
 1. How many columns does `products.csv` have? Which ones start with `_` (internal columns)?
+
+**Answer**: The file `products.csv` has 21 columns, four of which are internal.
+
 2. How many columns does `users.csv` have? Can you spot PII (passwords, IPs)?
+  
+**Answer**: The file "users.csv" contains 28 columns, two of which are PII (__hashed_password, _last_ip).
+
 3. In `orders.csv`, what are the possible values for `status`?
+
+**Answer**: The possible values for the variable `status` are `['delivered', 'shipped', 'returned', 'chargeback', 'cancelled', 'processing']`
+
 4. In `order_line_items.csv`, does `line_total_usd ≈ unit_price_usd × quantity`?
+
+**Answer**: In order_line_items.csv, line_total_usd is approximately equal to unit_price_usd multiplied by quantity.
+
 5. In `reviews.jsonl`, which columns start with `_`? What do `_moderation_score` and `_sentiment_raw` look like?
+
+**Answer**: In the file reviews.jsonl, the columns `_moderation_score`, `_sentiment_raw`, `_toxicity_score`, `_language_detected`, and `_review_source` start with an underscore. The columns `_moderation_score` and `sentiment_raw` are of type `double,` so `_moderation_score` seems to evaluate political violations, and `_sentiment_raw` seems to indicate the overall or emotional tone of the review.
+
 6. In the clickstream Parquet file, what does the `event_type` column contain? What `_`-columns exist?
+
+**Answer**: In the clickstrem Parquet file, the column `event_type` contains just one value that is `pageview`, and in this file there are 8 columns that starts with underscore and they are `['_ga_client_id', '_gtm_container_id', '_dom_interactive_ms', '_dom_complete_ms', '_ttfb_ms', '_connection_type', '_js_heap_size_mb', '_consent_string']`
 
 > 💡 This profiling step is what real Data Engineers do before building a pipeline. You need to understand the data **before** transforming it.
 
@@ -293,9 +310,21 @@ This function loads a pandas DataFrame into a PostgreSQL table in the Bronze sch
 
 **Key method:** `df.to_sql()` — check the [pandas docs](https://pandas.pydata.org/docs/reference/api/pandas.DataFrame.to_sql.html) for the parameters you'll need:
 - Which parameter sets the table name?
+
+**Answer**: The parameter `table_name`
+
 - Which parameter takes the SQLAlchemy engine?
+
+**Answer**: The parameter `con`
+
 - Which parameter sets the schema?
+
+**Answer**: The parameter `schema`
+
 - Which parameter controls the behavior if the table already exists?
+
+**Answer**: The parameter `if_exists`
+
 - Don't forget to exclude the pandas index from the SQL table
 
 ### 2.5 Implement the 4 CSV `extract_*()` functions
@@ -415,6 +444,30 @@ FROM bronze_group0.clickstream
 GROUP BY event_type
 ORDER BY cnt DESC;
 ```
+
+How many tables in your bronze schema?
+
+![alt text](image.png)
+
+Row counts per table
+
+![alt text](image-1.png)
+
+Inspect the columns of the products table — notice the _ prefixed columns
+
+![alt text](image-2.png)
+
+Quick peek at order statuses
+
+![alt text](image-3.png)
+
+Check reviews — what ratings exist?
+
+![alt text](image-4.png)
+
+Check clickstream — what event types exist?
+
+![alt text](image-5.png)
 
 **Expected results:**
 - 6 tables in your bronze schema
