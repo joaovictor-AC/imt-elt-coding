@@ -192,7 +192,8 @@ pytest tests/ -v --cov=src --cov-report=term-missing
 
 **Goal:** ≥80% coverage on `src/transform.py`. (In practice, it may be lower here for the sake of exercice)
 
-> ✅ **Checkpoint**: All tests pass, give us the results of your coverage in a PDF or markdown 
+
+> ✅ **Checkpoint**: All tests pass, just for you, the report of coverage is asked down below
 
 ---
 
