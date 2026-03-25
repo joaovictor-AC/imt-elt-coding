@@ -321,11 +321,13 @@ The project follows key data engineering principles:
 - separation of concerns  
 - reproducibility  
 - testability with pytest  
-- monitoring via execution reports  
+- monitoring via execution reports
+- automated CI pipeline via GitHub Actions that runs pytest and enforces code quality  
 
 ### Possible Improvements
 
 - improve pipeline orchestration  
 - add integration tests with a real database  
 - enhance logging and observability  
-- externalize configuration management  
+- externalize configuration management
+- refacturation functions 
