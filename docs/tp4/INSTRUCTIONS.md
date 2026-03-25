@@ -173,8 +173,8 @@ After running `python pipeline.py`, a `pipeline_report.json` file should be gene
 
 Ensure your repo is clean and professional:
 
-- [ ] `.gitignore` is complete (no `.env`, `__pycache__`, `venv/`, `*.pyc`)
-- [ ] `requirements.txt` has all dependencies pinned
+- [Check] `.gitignore` is complete (no `.env`, `__pycache__`, `venv/`, `*.pyc`)
+- [Check] `requirements.txt` has all dependencies pinned
 - [ ] `README.md` has clear setup and run instructions
 - [ ] All code follows consistent formatting (run `black src/` if available)
 - [ ] No hardcoded credentials anywhere

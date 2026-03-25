@@ -27,3 +27,12 @@ data/
 # OS
 .DS_Store
 Thumbs.db
+
+#Generated report
+pipeline_report.json
+
+#Cache
+.pytest_cache/
+
+#Test covaerage
+coverage.xml
