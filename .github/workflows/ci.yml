@@ -1,0 +1,82 @@
+# =============================================================================
+# TP4 — GitHub Actions CI/CD Pipeline
+# =============================================================================
+#
+# WHAT THIS FILE DOES:
+# Every time you "git push" to main/master, GitHub will automatically:
+#   1. Create a temporary Ubuntu machine (called a "runner")
+#   2. Clone your repository onto it
+#   3. Install Python and your dependencies
+#   4. Run flake8 (linter) to check code quality
+#   5. Run pytest to execute your tests
+#   6. Show you the result in the "Actions" tab on GitHub
+#
+# WHERE TO SEE RESULTS?
+#   GitHub → your repo → "Actions" tab
+#   ✅ green = everything passed    ❌ red = something failed
+#
+# =============================================================================
+
+name: ELT Pipeline CI
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+
+jobs:
+  lint-and-test:
+    runs-on: ubuntu-latest
+
+    steps:
+      # --- Step 1: Clone the repository onto the runner ---
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # --- Step 2: Install Python on the runner ---
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+
+      # --- Step 3: Install project dependencies ---
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install flake8
+
+      # --- Step 4: Lint the code with flake8 ---
+      # flake8 checks for syntax errors, unused variables, long lines, etc.
+      - name: Lint with flake8
+        run: |
+          flake8 src/ --count --select=E9,F63,F7,F82 --show-source --statistics
+          flake8 src/ --count --exit-zero --max-complexity=10 --max-line-length=120 --statistics
+
+      # --- Step 5: Run tests with coverage ---
+      # TODO: Uncomment this step to run pytest in CI
+      #
+      # Why "env:"? The CI machine has no real database.
+      # We set fake values because our tests use mocks (@patch)
+      # and never actually connect to PostgreSQL.
+      #
+      # - name: Run tests with coverage
+      #   env:
+      #     RDS_HOST: localhost
+      #     RDS_PORT: "5432"
+      #     RDS_DATABASE: test_db
+      #     RDS_USER: test_user
+      #     RDS_PASSWORD: test_pass
+      #     BRONZE_SCHEMA: bronze_test
+      #     SILVER_SCHEMA: silver_test
+      #     GOLD_SCHEMA: gold_test
+      #   run: |
+      #     pytest tests/ -v --cov=src --cov-report=xml --cov-report=term-missing
+
+      # --- Step 6 (Bonus): Save the coverage report as an artifact ---
+      # - name: Upload coverage report
+      #   uses: actions/upload-artifact@v4
+      #   with:
+      #     name: coverage-report
+      #     path: coverage.xml

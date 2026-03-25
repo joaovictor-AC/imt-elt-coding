@@ -26,72 +26,58 @@ This is the evaluation TP — your deliverables at the end of this session will 
 
 ## Step 1 — GitHub Actions CI/CD (30 min)
 
-### Principle
+### What is GitHub Actions?
 
-Every `git push` should automatically:
-1. **Lint** the code (formatting, style)
-2. **Run tests** (unit + coverage)
-3. **Generate a report** (coverage badge, test results)
+GitHub Actions is a **CI/CD** (Continuous Integration / Continuous Deployment) platform built into GitHub. It automates tasks every time you push code.
 
-### 1.1 Create the workflow file
+**In simple terms:** it's a robot that runs your tests automatically every time you do `git push`.
+
+### How does it work?
+
+```mermaid
+flowchart LR
+    A["👨‍💻 git push"] --> B["🔔 GitHub detects push"]
+    B --> C["🖥️ Spins up Ubuntu VM"]
+    C --> D["📥 Clones your repo"]
+    D --> E["🐍 Installs Python + deps"]
+    E --> F["🔍 Runs flake8 (linter)"]
+    F --> G["🧪 Runs pytest (tests)"]
+    G --> H{"✅ All passed?"}
+    H -- Yes --> I["🟢 Green badge"]
+    H -- No --> J["🔴 Red badge"]
+```
+
+**Step by step:**
+
+1. You do `git push` to your repository
+2. GitHub sees the push and reads `.github/workflows/ci.yml`
+3. It creates a **temporary Ubuntu machine** (called a "runner")
+4. It clones your repo on that machine
+5. It runs each **step** defined in the YAML file sequentially
+6. If all steps succeed → ✅ green. If any step fails → ❌ red
+7. You see the result in **GitHub → your repo → "Actions" tab**
+
+### Key concepts
+
+| Concept | Description | Example |
+|---------|------------|---------|
+| **Workflow** | A YAML file that defines what to automate | `.github/workflows/ci.yml` |
+| **Trigger (`on:`)** | When to run the workflow | `on: push` = every time you push |
+| **Job** | A set of steps that run on one machine | `lint-and-test` |
+| **Step** | A single action (run a command or use a pre-made action) | `- name: Run tests` |
+| **`uses:`** | Use a pre-made action from GitHub Marketplace | `uses: actions/checkout@v4` |
+| **`run:`** | Execute shell commands (like in your terminal) | `run: pytest tests/ -v` |
+| **`env:`** | Set environment variables for a step | `RDS_HOST: localhost` |
+
+### 1.1 Complete the workflow file
 
 📁 **File:** `.github/workflows/ci.yml`
 
-```yaml
-name: ELT Pipeline CI
+The file is already mostly complete. The first 4 steps (checkout, Python setup, install dependencies, linter) are done for you.
 
-on:
-  push:
-    branches: [main, master]
-  pull_request:
-    branches: [main, master]
+**Your task:** Uncomment **Step 5** (Run tests with coverage) — it's the block starting with `# - name: Run tests with coverage`.
 
-jobs:
-  test:
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: "3.10"
-
-      - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install -r requirements.txt
-          pip install pytest pytest-cov flake8
-
-      - name: Lint with flake8
-        run: |
-          # Stop on syntax errors or undefined names
-          flake8 src/ --count --select=E9,F63,F7,F82 --show-source --statistics
-          # Warnings (non-blocking)
-          flake8 src/ --count --exit-zero --max-complexity=10 --max-line-length=120 --statistics
-
-      - name: Run tests with coverage
-        env:
-          # Use mock/test values — CI doesn't connect to real DB
-          RDS_HOST: localhost
-          RDS_PORT: "5432"
-          RDS_DATABASE: test_db
-          RDS_USER: test_user
-          RDS_PASSWORD: test_pass
-          BRONZE_SCHEMA: bronze_test
-          SILVER_SCHEMA: silver_test
-          GOLD_SCHEMA: gold_test
-        run: |
-          pytest tests/ -v --cov=src --cov-report=xml --cov-report=term-missing
-
-      - name: Upload coverage report
-        uses: actions/upload-artifact@v4
-        with:
-          name: coverage-report
-          path: coverage.xml
-```
+> 💡 **Why fake environment variables?** On the CI machine, there's no real PostgreSQL database. But your tests use `@patch` (mocks), so they never actually connect. We just need the variables to exist so Python doesn't crash on `os.getenv()`.
 
 ### 1.2 Push and verify
 
@@ -101,7 +87,7 @@ git commit -m "ci: add GitHub Actions CI pipeline"
 git push
 ```
 
-Go to your GitHub repository → **Actions** tab → verify the workflow runs successfully.
+Then go to **GitHub → your repo → Actions tab** to see it run.
 
 > ✅ **Checkpoint**: Green CI badge on your repository.
 
@@ -121,30 +107,41 @@ In production, you need to know:
 
 📁 **File:** `src/monitoring.py`
 
-Create a module with two dataclasses to track pipeline execution:
+The file already contains two dataclasses (`StepMetrics` and `PipelineReport`) with some methods to complete.
 
-**`StepMetrics`** — tracks a single pipeline step:
-- `step_name` (str): e.g. "extract", "transform", "gold"
-- `status` (str): "pending" → "running" → "success" / "failed"
-- `start_time`, `end_time` (str): ISO format timestamps
-- `duration_seconds` (float): how long the step took
-- `rows_processed` (int): total rows handled
-- `tables_created` (list): names of tables created
-- `errors` (list): any error messages
-
-**`PipelineReport`** — aggregates all steps:
-- `pipeline_name` (str): "KICKZ EMPIRE ELT"
-- `run_id` (str): timestamp of the run
-- `steps` (list): list of `StepMetrics`
-- `add_step()`: add a step to the report
-- `to_json()`: serialize to JSON string
-- `save(filepath)`: write JSON to file
+**Your task:** Complete the 3 methods in `PipelineReport`:
+- `add_step()` — append a step to the list
+- `to_json()` — serialize to JSON using `dataclasses.asdict()`
+- `save()` — write to a file
 
 > 💡 Use `@dataclass` with `field(default_factory=list)` for mutable default values. Use `dataclasses.asdict()` to convert to a dict for JSON serialization.
 
 ### 2.2 Integrate metrics into the pipeline
 
-Modify `pipeline.py` to track execution time and row counts for each step.
+📁 **File:** `pipeline.py`
+
+The file has TODO comments showing you how to track each step. The pattern is:
+
+```python
+step = StepMetrics(step_name="extract")
+step.status = "running"
+step.start_time = datetime.now(timezone.utc).isoformat()
+try:
+    results = extract_all()
+    step.status = "success"
+    step.rows_processed = sum(len(df) for df in results.values())
+    step.tables_created = list(results.keys())
+except Exception as e:
+    step.status = "failed"
+    step.errors.append(str(e))
+    raise
+finally:
+    step.end_time = datetime.now(timezone.utc).isoformat()
+    step.duration_seconds = round(time.time() - t0, 2)
+    report.add_step(step)
+```
+
+**Your task:** Uncomment the TODO blocks in `pipeline.py` for each step (extract, transform, gold).
 
 ### 2.3 Generate a report after each run
 
@@ -161,8 +158,7 @@ After running `python pipeline.py`, a `pipeline_report.json` file should be gene
       "duration_seconds": 12.3,
       "rows_processed": 53188,
       "tables_created": ["products", "users", "orders", "order_line_items"]
-    },
-    ...
+    }
   ]
 }
 ```
@@ -201,47 +197,6 @@ Your `README.md` should include:
 git tag -a v1.0.0 -m "TP4: Production-ready ELT pipeline"
 git push origin v1.0.0
 ```
-
----
-
-## 📝 Evaluation Deliverables
-
-### What to submit
-
-| Deliverable | Deadline | Format |
-|------------|----------|--------|
-| **GitHub Repository** | Wednesday evening | Link to repo (all code pushed) |
-| **Pipeline Report** | Wednesday evening | `pipeline_report.json` in repo |
-| **Presentation Video** | Thursday noon | Video (5-10 min per team) |
-
-### Grading criteria (/20)
-
-| Criteria | Points | Description |
-|----------|--------|-------------|
-| **Pipeline functionality** | 5 | Bronze → Silver → Gold works end-to-end |
-| **Code quality** | 4 | Clean code, proper structure, error handling, logging |
-| **Test coverage** | 3 | ≥80% coverage, meaningful tests, mocks |
-| **CI/CD** | 3 | GitHub Actions passing, lint + test |
-| **Monitoring & reporting** | 2 | Pipeline report, execution metrics |
-| **Presentation** | 3 | Clear explanation of architecture, choices, challenges |
-
-### Presentation content (5-10 min video)
-
-1. **Architecture overview** — Show your pipeline diagram (Bronze → Silver → Gold)
-2. **Technical choices** — Why SQLAlchemy? Why this data model? Trade-offs?
-3. **Demo** — Run the pipeline and show the results (Gold tables, SQL queries)
-4. **Data quality** — What issues did you find? How did you handle them?
-5. **Challenge & learnings** — What was the hardest part? What would you improve?
-
----
-
-## 🎁 Bonus (extra credit)
-
-1. **Scheduled execution**: Use `cron` or a task scheduler to run the pipeline automatically (show the configuration).
-2. **Alerting**: Send a Slack/email notification if the pipeline fails (can be a mock/proof of concept).
-3. **Dashboard**: Create a simple dashboard (Streamlit, Grafana, or even a Jupyter notebook) that visualizes the Gold tables.
-4. **Prefect orchestration**: Wrap the pipeline in Prefect flows/tasks for better observability and retry logic.
-5. **Additional datasets**: Integrate more KICKZ EMPIRE datasets (payments, reviews, clickstream) into the full pipeline.
 
 ---
 
