@@ -1,74 +1,192 @@
-# KICKZ EMPIRE — ELT Pipeline
+# KICKZ EMPIRE — ELT Data Pipeline
 
-ELT (Extract, Load, Transform) pipeline for the **KICKZ EMPIRE** e-commerce website, built as part of the IMT Data Engineering course.
+## 1. Project Description
 
-## 🏗️ Architecture
+This project implements a complete ELT (Extract, Load, Transform) data pipeline for an e-commerce context.
 
-```
-S3 (CSV)  ──→  🥉 Bronze (raw)  ──→  🥈 Silver (clean)  ──→  🥇 Gold (analytics)
-```
+The pipeline ingests raw operational data (products, users, orders, payments, etc.) from AWS S3, stores it in a PostgreSQL database (AWS RDS), cleans and standardizes it, and finally produces business-ready aggregated tables for analytics and reporting.
 
-| Layer | Schema | Description |
-|---|---|---|
-| **Bronze** | `bronze_groupN` | Raw data — faithful copy of CSV files from S3 |
-| **Silver** | `silver_groupN` | Cleaned data — internal columns removed, PII masked |
-| **Gold** | `gold_groupN` | Aggregated data — ready for dashboards |
+The business objective is to enable:
+- reliable tracking of sales and revenue  
+- customer behavior analysis  
+- product performance monitoring  
+- KPI generation for decision-making  
 
-## 📁 Project Structure
+The project follows modern data engineering practices with a layered architecture and modular Python codebase.
 
-```
-├── docs/
-│   ├── DATA_PRESENTATION.md    # KICKZ EMPIRE data presentation
-│   └── tp1/
-│       └── INSTRUCTIONS.md     # Step-by-step TP1 instructions
-├── src/
-│   ├── __init__.py
-│   ├── database.py             # PostgreSQL connection (AWS RDS)
-│   ├── extract.py              # Extract: S3 (CSV) → Bronze
-│   ├── transform.py            # Transform: Bronze → Silver
-│   └── gold.py                 # Gold: Silver → Gold (aggregations)
-├── pipeline.py                 # ELT orchestrator
-├── tests/                      # Tests (TP2)
-├── .env.example                # Environment variables template
-├── .gitignore
-├── requirements.txt
-└── README.md
-```
+---
 
-## 🚀 Quick Start
+## 2. Architecture Diagram
 
-```bash
-# 1. Setup
-python -m venv venv && source venv/bin/activate
-pip install -r requirements.txt
-cp .env.example .env  # Configure with your credentials (DB + AWS)
+The pipeline follows a layered ELT architecture:
 
-# 2. Test the connection
-python -m src.database
+    Raw Data Sources (AWS S3)
+                │
+                ▼
+        ┌────────────────┐
+        │   Bronze Layer │
+        │  (Extraction)  │
+        └────────────────┘
+                │
+                ▼
+        ┌────────────────┐
+        │   Silver Layer │
+        │ (Transformation)│
+        └────────────────┘
+                │
+                ▼
+        ┌────────────────┐
+        │    Gold Layer  │
+        │  (Aggregation) │
+        └────────────────┘
 
-# 3. Run the pipeline (reads from S3 automatically)
-python pipeline.py
-```
+- Bronze: raw data stored as-is in the database  
+- Silver: cleaned and standardized data  
+- Gold: aggregated and analytics-ready tables  
 
-## 📊 Datasets
+---
 
-| Dataset | Format | Source (S3) | Bronze Table |
-|---|---|---|---|
-| Product Catalog | CSV | `raw/catalog/products.csv` | `products` |
-| Users | CSV | `raw/users/users.csv` | `users` |
-| Orders | CSV | `raw/orders/orders.csv` | `orders` |
-| Order Line Items | CSV | `raw/order_line_items/order_line_items.csv` | `order_line_items` |
+## 3. Setup Instructions
 
-## 📚 Documentation
+### Clone the repository
 
-- [Data Presentation](docs/DATA_PRESENTATION.md)
-- [TP1 Instructions](docs/tp1/INSTRUCTIONS.md)
+    git clone <repo-url>
+    cd imt-elt-coding-master
 
-## ⚙️ Tech Stack
+### Create a virtual environment
 
-- **Python 3.10+** : Main language
-- **pandas** : Data manipulation
-- **boto3** : AWS S3 access
-- **SQLAlchemy** : ORM / PostgreSQL connection
-- **PostgreSQL** (AWS RDS) : Database
-- **pytest** : Testing (TP2)
+    python -m venv venv
+    source venv/bin/activate
+
+On Windows:
+
+    venv\Scripts\activate
+
+### Install dependencies
+
+    pip install -r requirements.txt
+
+### Configure environment variables
+
+Create a `.env` file based on the following template:
+
+    # PostgreSQL (AWS RDS)
+
+    RDS_HOST=your-rds-host
+    RDS_PORT=5432
+    RDS_DATABASE=your-database-name
+    RDS_USER=your-username
+    RDS_PASSWORD=your-password
+
+    # Schema names (replace X with your group number)
+
+    BRONZE_SCHEMA=bronze_groupX
+    SILVER_SCHEMA=silver_groupX
+    GOLD_SCHEMA=gold_groupX
+
+    # AWS S3 (read-only — raw data)
+
+    S3_BUCKET_NAME=your-bucket-name
+    S3_PREFIX=raw
+    AWS_REGION=your-region
+
+    AWS_ACCESS_KEY_ID=your-access-key
+    AWS_SECRET_ACCESS_KEY=your-secret-key
+
+⚠️ Never commit your `.env` file. Use a `.env.example` file with placeholders instead.
+
+### Test database connection
+
+    python -m src.database
+
+This command validates:
+- database connectivity  
+- environment variables configuration  
+- schema availability  
+
+---
+
+## 4. How to Run
+
+### Run the full pipeline
+
+    python pipeline.py
+
+### Run individual steps
+
+    python pipeline.py --step extract
+    python pipeline.py --step transform
+    python pipeline.py --step gold
+
+The pipeline executes:
+1. Extraction into Bronze  
+2. Transformation into Silver  
+3. Gold aggregation  
+
+At the end of execution, a report is generated:
+
+    pipeline_report.json
+
+---
+
+## 5. How to Test
+
+Tests are implemented using `pytest`.
+
+### Run all tests
+
+    pytest tests/ -v --cov=src --cov-report=html
+
+This command:
+- runs all tests in the `tests/` directory  
+- enables verbose output  
+- computes code coverage for the `src/` module  
+- generates an HTML coverage report  
+
+### View coverage report
+
+    htmlcov/index.html
+
+### Test scope
+
+- Extract layer: verifies data extraction functions and Bronze loading  
+- Transform layer: validates cleaning rules and data consistency  
+- Gold layer: checks aggregation logic and table creation  
+- Tests rely on mocking to isolate logic from external systems  
+
+### Database testing
+
+The real database connection is not tested via pytest.
+
+Instead, it is validated separately with:
+
+    python -m src.database
+
+---
+
+## 6. Team Members
+
+| Name | Role |
+|------|------|
+| ARAÚJO COSTA João | Développeur |
+| CÁCERES Alejandro | Développeur |
+| FLICHY Astrid | Développeur |
+
+---
+
+## Additional Notes
+
+The project follows key data engineering principles:
+- layered architecture (Bronze / Silver / Gold)  
+- modular design  
+- separation of concerns  
+- reproducibility  
+- testability with pytest  
+- monitoring via execution reports  
+
+### Possible Improvements
+
+- improve pipeline orchestration  
+- add integration tests with a real database  
+- enhance logging and observability  
+- externalize configuration management  
