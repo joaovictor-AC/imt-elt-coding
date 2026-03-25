@@ -1,22 +1,5 @@
 """
-KICKZ EMPIRE — Transform (Silver Layer)
-=========================================
-TP1 — Step 2: Clean and conform Bronze data → Silver.
-
-This module reads tables from the Bronze schema, applies cleaning
-transformations, and loads the results into the Silver schema.
-
-Transformations applied:
-    - Remove internal columns (prefixed with `_`)
-    - Normalize data types
-    - Remove PII (Personally Identifiable Information)
-    - Validate values (statuses, amounts, etc.)
-
-Silver tables created:
-    1. silver.dim_products   ← bronze.products (cleaned)
-    2. silver.dim_users      ← bronze.users (PII removed)
-    3. silver.fct_orders     ← bronze.orders (conformed)
-    4. silver.fct_order_lines ← bronze.order_line_items (conformed)
+SOLUTION — Transform (Silver Layer)
 """
 
 import pandas as pd
@@ -28,22 +11,8 @@ from src.logger import get_logger
 logger = get_logger(__name__)
 
 
-# ---------------------------------------------------------------------------
-# Helpers
-# ---------------------------------------------------------------------------
 def _read_bronze(table_name: str) -> pd.DataFrame:
-    """
-    Read a table from the Bronze schema via SQL.
-
-    Args:
-        table_name (str): Bronze table name (e.g. "products").
-
-    Returns:
-        pd.DataFrame: The Bronze table contents.
-
-    Hint: use pd.read_sql() with a SELECT * query
-    Docs: https://pandas.pydata.org/docs/reference/api/pandas.read_sql.html
-    """
+    """Read a table from the Bronze schema via SQL."""
     engine = get_engine()
     query = f"SELECT * FROM {BRONZE_SCHEMA}.{table_name}"
     return pd.read_sql(query, engine)
@@ -75,14 +44,7 @@ def _drop_internal_columns(df: pd.DataFrame) -> pd.DataFrame:
 
 
 def _load_to_silver(df: pd.DataFrame, table_name: str, if_exists: str = "replace"):
-    """
-    Load a DataFrame into a Silver schema table.
-
-    Args:
-        df (pd.DataFrame): The cleaned data.
-        table_name (str): Target table name (without the schema).
-        if_exists (str): "replace" or "append"
-    """
+    """Load a DataFrame into a table in the Silver schema."""
     engine = get_engine()
     df.to_sql(
         name=table_name,
@@ -94,9 +56,6 @@ def _load_to_silver(df: pd.DataFrame, table_name: str, if_exists: str = "replace
     logger.info(f"    ✅ {SILVER_SCHEMA}.{table_name} — {len(df)} rows loaded")
 
 
-# ---------------------------------------------------------------------------
-# Transformations per table
-# ---------------------------------------------------------------------------
 def transform_products() -> pd.DataFrame:
     """
     Transform bronze.products → silver.dim_products.
@@ -271,9 +230,6 @@ def transform_order_line_items() -> pd.DataFrame:
         raise
 
 
-# ---------------------------------------------------------------------------
-# Main function
-# ---------------------------------------------------------------------------
 def transform_all() -> dict[str, pd.DataFrame]:
     """
     Run the full Bronze → Silver transformation.
@@ -295,8 +251,5 @@ def transform_all() -> dict[str, pd.DataFrame]:
     return results
 
 
-# ---------------------------------------------------------------------------
-# Entry point for testing the transformation standalone
-# ---------------------------------------------------------------------------
 if __name__ == "__main__":
     transform_all()

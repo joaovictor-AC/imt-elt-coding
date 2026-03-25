@@ -1,15 +1,5 @@
 """
-KICKZ EMPIRE — Gold Layer (Business Aggregations)
-==================================================
-TP1 — Step 3: Create Gold tables/views from Silver.
-
-The Gold layer contains aggregated tables and views, ready for
-analytics dashboards and business reports.
-
-Gold tables/views created:
-    1. gold.daily_revenue       — Revenue per day
-    2. gold.product_performance — Product performance (sales, revenue, qty)
-    3. gold.customer_ltv        — Lifetime Value per customer
+SOLUTION — Gold Layer (Business Aggregations)
 """
 
 import pandas as pd
@@ -21,9 +11,6 @@ from src.logger import get_logger
 logger = get_logger(__name__)
 
 
-# ---------------------------------------------------------------------------
-# Helpers
-# ---------------------------------------------------------------------------
 def _read_silver(table_name: str) -> pd.DataFrame:
     """Read a table from the Silver schema."""
     engine = get_engine()
@@ -32,7 +19,7 @@ def _read_silver(table_name: str) -> pd.DataFrame:
 
 
 def _create_gold_table(df: pd.DataFrame, table_name: str, if_exists: str = "replace"):
-    """Load a DataFrame into a Gold schema table."""
+    """Load a DataFrame into a table in the Gold schema."""
     engine = get_engine()
     df.to_sql(
         name=table_name,
@@ -45,13 +32,7 @@ def _create_gold_table(df: pd.DataFrame, table_name: str, if_exists: str = "repl
 
 
 def _create_gold_view(view_name: str, sql: str):
-    """
-    Create a SQL view in the Gold schema.
-
-    Args:
-        view_name (str): View name (without the schema).
-        sql (str): The SELECT query that defines the view.
-    """
+    """Create a SQL view in the Gold schema."""
     engine = get_engine()
     full_name = f"{GOLD_SCHEMA}.{view_name}"
     with engine.connect() as conn:
@@ -61,29 +42,24 @@ def _create_gold_view(view_name: str, sql: str):
     logger.info(f"    ✅ View {full_name} created")
 
 
-# ---------------------------------------------------------------------------
-# Gold tables / views
-# ---------------------------------------------------------------------------
 def create_daily_revenue():
-    """
-    Create gold.daily_revenue — Revenue per day.
+    """Create gold.daily_revenue — daily revenue."""
+    # TODO (TP3): Replace print with logger.info, add try/except + logger.error + raise
+    print("  📊 Gold: daily_revenue")
 
-    Expected columns:
-        - order_date (DATE)      : Day
-        - total_orders (INT)     : Number of orders
-        - total_revenue (FLOAT)  : Sum of total_usd
-        - avg_order_value (FLOAT): Average order value
-        - total_items (INT)      : Total number of items sold
+    # TODO: Create daily_revenue using SQL
+    # Write a SQL query that joins fct_orders + fct_order_lines,
+    # groups by date, and computes the aggregates described in the docstring.
+    # Exclude cancelled/chargeback orders.
+    # Then: pd.read_sql() → _create_gold_table()
 
-    Source: silver.fct_orders (join with silver.fct_order_lines)
-
-    SQL Hint:
+    query = f"""
         SELECT
             DATE(o.order_date) AS order_date,
             COUNT(DISTINCT o.order_id) AS total_orders,
-            SUM(o.total_usd) AS total_revenue,
-            AVG(o.total_usd) AS avg_order_value,
-            SUM(ol.quantity) AS total_items
+            ROUND(CAST(SUM(o.total_usd) AS numeric), 2) AS total_revenue,
+            ROUND(CAST(AVG(o.total_usd) AS numeric), 2) AS avg_order_value,
+            COALESCE(SUM(ol.quantity), 0) AS total_items
         FROM {SILVER_SCHEMA}.fct_orders o
         LEFT JOIN {SILVER_SCHEMA}.fct_order_lines ol ON o.order_id = ol.order_id
         WHERE o.status NOT IN ('cancelled', 'chargeback')
@@ -250,9 +226,6 @@ def create_gold_layer():
         logger.error(f"Error creating gold layer: {str(e)}")
         raise
 
-# ---------------------------------------------------------------------------
-# Entry point
-# ---------------------------------------------------------------------------
 if __name__ == "__main__":
     create_gold_layer()
     

@@ -1,29 +1,6 @@
 """
-KICKZ EMPIRE — Extract (Bronze Layer)
-======================================
-TP1 — Step 2: Load raw data from S3 → Bronze schema in PostgreSQL.
-
-This module reads files from the S3 data lake (bucket: kickz-empire-data)
-and loads them as-is into your group's Bronze schema.
-
-The data lake contains **3 different file formats**:
-    - CSV   : simple tabular files
-    - JSONL : one JSON object per line (newline-delimited JSON)
-    - Parquet (partitioned) : columnar format, split by date (dt=YYYY-MM-DD/)
-
-Datasets handled in this lab:
-    CSV:
-        1. raw/catalog/products.csv                         → bronze.products
-        2. raw/users/users.csv                              → bronze.users
-        3. raw/orders/orders.csv                            → bronze.orders
-        4. raw/order_line_items/order_line_items.csv        → bronze.order_line_items
-    JSONL:
-        5. raw/reviews/reviews.jsonl                        → bronze.reviews
-    Parquet (partitioned by day):
-        6. raw/clickstream/dt=YYYY-MM-DD/part-*.snappy.parquet → bronze.clickstream
-
-Bronze principle: data is loaded AS-IS, with zero transformations.
-We even keep the "dirty" columns (_internal_*, _hashed_password, etc.)
+SOLUTION — Extract (Bronze Layer)
+Reads files from S3 data lake (CSV, JSONL, Parquet) → loads into Bronze schema.
 """
 
 import os
@@ -43,23 +20,12 @@ logger = get_logger(__name__)
 # Configuration
 # ---------------------------------------------------------------------------
 S3_BUCKET = os.getenv("S3_BUCKET_NAME", "kickz-empire-data")
-S3_PREFIX = os.getenv("S3_PREFIX", "raw")   # root prefix in the bucket
+S3_PREFIX = os.getenv("S3_PREFIX", "raw")
 AWS_REGION = os.getenv("AWS_REGION", "eu-west-3")
 
 
-# ---------------------------------------------------------------------------
-# Helpers — S3 client
-# ---------------------------------------------------------------------------
 def _get_s3_client():
-    """
-    Create and return a boto3 S3 client.
-
-    Uses AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY from environment
-    variables (loaded via .env).
-
-    Returns:
-        boto3.client: An S3 client configured for the project region.
-    """
+    """Create and return a boto3 S3 client."""
     return boto3.client(
         "s3",
         region_name=AWS_REGION,
@@ -69,22 +35,10 @@ def _get_s3_client():
 
 
 # ---------------------------------------------------------------------------
-# Helpers — Read different formats from S3
+# Read helpers — one per format
 # ---------------------------------------------------------------------------
 def _read_csv_from_s3(s3_key: str) -> pd.DataFrame:
-    """
-    Read a CSV file from S3 into a pandas DataFrame.
-
-    Args:
-        s3_key (str): Full S3 object key (e.g. "raw/catalog/products.csv")
-
-    Returns:
-        pd.DataFrame: The CSV contents.
-
-    Hint: use boto3 to get the object, then pd.read_csv() on the body.
-    Docs:
-        https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/s3/client/get_object.html
-    """
+    """Read a CSV file from S3 into a pandas DataFrame."""
     # TODO: Download the CSV from S3 and return it as a DataFrame
     # Steps: get S3 client → get_object() → read & decode the body → pd.read_csv()
     # Remember: read_csv() expects a file-like object, not a raw string
@@ -96,22 +50,7 @@ def _read_csv_from_s3(s3_key: str) -> pd.DataFrame:
     return df    
 
 def _read_jsonl_from_s3(s3_key: str) -> pd.DataFrame:
-    """
-    Read a JSONL (newline-delimited JSON) file from S3 into a DataFrame.
-
-    JSONL format = one JSON object per line. Each line is a complete record.
-    Example line: {"review_id": "abc", "rating": 5, "body": "Great!"}
-
-    Args:
-        s3_key (str): Full S3 object key (e.g. "raw/reviews/reviews.jsonl")
-
-    Returns:
-        pd.DataFrame: The JSONL contents.
-
-    Hint: use boto3 to get the object, then pd.read_json() with lines=True.
-    Docs:
-        https://pandas.pydata.org/docs/reference/api/pandas.read_json.html
-    """
+    """Read a JSONL (newline-delimited JSON) file from S3 into a DataFrame."""
     # TODO: Download the JSONL from S3 and return it as a DataFrame
     # Very similar to _read_csv_from_s3(), but use pd.read_json() instead.
     # Key parameter: lines=True (tells pandas each line is a separate JSON object)
@@ -123,31 +62,7 @@ def _read_jsonl_from_s3(s3_key: str) -> pd.DataFrame:
     return df
     
 def _read_partitioned_parquet_from_s3(s3_prefix: str) -> pd.DataFrame:
-    """
-    Read a date-partitioned Parquet dataset from S3 into a DataFrame.
-
-    The clickstream data is stored as partitioned Parquet:
-        raw/clickstream/dt=2026-02-05/part-00001.snappy.parquet
-        raw/clickstream/dt=2026-02-05/part-00002.snappy.parquet
-        raw/clickstream/dt=2026-02-06/part-00001.snappy.parquet
-        ...
-
-    Strategy:
-        1. List all objects under the given S3 prefix
-        2. Filter for .parquet files only
-        3. Download each file and read it with pyarrow
-        4. Concatenate all partitions into a single DataFrame
-
-    Args:
-        s3_prefix (str): S3 prefix for the partitioned dataset
-                         (e.g. "raw/clickstream/")
-
-    Returns:
-        pd.DataFrame: All partitions concatenated.
-
-    Docs:
-        https://arrow.apache.org/docs/python/generated/pyarrow.parquet.read_table.html
-    """
+    """Read a date-partitioned Parquet dataset from S3 into a DataFrame."""
     # TODO: List all Parquet files under s3_prefix and concatenate them
     # Strategy:
     #   1. Use s3.get_paginator("list_objects_v2") to list all objects under the prefix
@@ -173,29 +88,10 @@ def _read_partitioned_parquet_from_s3(s3_prefix: str) -> pd.DataFrame:
     return pd.concat(dfs, ignore_index=True)
 
 # ---------------------------------------------------------------------------
-# Helper — Load to Bronze
+# Load helper
 # ---------------------------------------------------------------------------
 def _load_to_bronze(df: pd.DataFrame, table_name: str, if_exists: str = "replace"):
-    """
-    Load a DataFrame into a Bronze schema table.
-
-    Args:
-        df (pd.DataFrame): The data to load.
-        table_name (str): Target table name (without the schema).
-        if_exists (str): Behavior if the table already exists.
-            - "replace": drop and recreate the table
-            - "append" : add data to the existing table
-
-    Hint: use df.to_sql() with these parameters:
-        - name: table name
-        - con: SQLAlchemy engine
-        - schema: the bronze schema
-        - if_exists: "replace" or "append"
-        - index: False (don't write the pandas index)
-
-    Docs:
-        https://pandas.pydata.org/docs/reference/api/pandas.DataFrame.to_sql.html
-    """
+    """Load a DataFrame into a table in the Bronze schema."""
     # TODO: Load the DataFrame into PostgreSQL using df.to_sql()
     # You'll need: get_engine(), and the right to_sql() parameters
     # Don't forget: index=False (we don't want the pandas index as a column)
@@ -589,8 +485,5 @@ def extract_all() -> dict[str, pd.DataFrame]:
     return results
 
 
-# ---------------------------------------------------------------------------
-# Entry point to test extraction alone
-# ---------------------------------------------------------------------------
 if __name__ == "__main__":
     extract_all()
