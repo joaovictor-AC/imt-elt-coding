@@ -36,8 +36,9 @@ import pyarrow.parquet as pq
 from sqlalchemy import text
 
 from src.database import get_engine, BRONZE_SCHEMA
+from src.logger import get_logger
 
-
+logger = get_logger(__name__) 
 # ---------------------------------------------------------------------------
 # Configuration
 # ---------------------------------------------------------------------------
@@ -230,14 +231,19 @@ def extract_products() -> pd.DataFrame:
     # TODO: Read → Log → Load → Return
     # Use _read_csv_from_s3() with the right S3 key, then _load_to_bronze()
 
-    s3_key = f"{S3_PREFIX}/catalog/products.csv"
-    df_products = _read_csv_from_s3(s3_key)
-    
-    print(f"Products Rows: {df_products.shape[0]}, Columns: {df_products.shape[1]}")
-    
-    _load_to_bronze(df_products, table_name="products")
-    
-    return df_products
+    try:
+        logger.info("Extract: products")
+        s3_key = f"{S3_PREFIX}/catalog/products.csv"
+        df_products = _read_csv_from_s3(s3_key)
+        
+        logger.info(f"Products Rows: {df_products.shape[0]}, Columns: {df_products.shape[1]}")
+        
+        _load_to_bronze(df_products, table_name="products")
+        
+        return df_products
+    except Exception as e:
+        logger.error(f"Error extracting products: {str(e)}")
+        raise
 
 
 def extract_users() -> pd.DataFrame:
@@ -250,20 +256,16 @@ def extract_users() -> pd.DataFrame:
     Returns:
         pd.DataFrame: The user data.
     """
-    df = _read_csv_from_s3("raw/users/users.csv")
-    print(f"users: {len(df)} rows, {len(df.columns)} columns")
-    _load_to_bronze(df, "users")
-    return df
-
-    # TODO: Same pattern as extract_products()
-    s3_key = f"{S3_PREFIX}/users/users.csv"
-    df_users = _read_csv_from_s3(s3_key)
-    
-    print(f"Users Rows: {df_users.shape[0]}, Columns: {df_users.shape[1]}")
-    
-    _load_to_bronze(df_users, table_name="users")
-    
-    return df_users
+    try:
+        logger.info("Extract: users")
+        s3_key = f"{S3_PREFIX}/users/users.csv"
+        df = _read_csv_from_s3(s3_key)
+        logger.info(f"users: {len(df)} rows, {len(df.columns)} columns")
+        _load_to_bronze(df, "users")
+        return df
+    except Exception as e:
+        logger.error(f"Error extracting users: {str(e)}")
+        raise
 
 
 def extract_orders() -> pd.DataFrame:
@@ -276,15 +278,19 @@ def extract_orders() -> pd.DataFrame:
     Returns:
         pd.DataFrame: The order data.
     """
-    # TODO: Same pattern as extract_products()
-    s3_key = f"{S3_PREFIX}/orders/orders.csv"
-    df_orders = _read_csv_from_s3(s3_key)
-    
-    print(f"Orders Rows: {df_orders.shape[0]}, Columns: {df_orders.shape[1]}")
-    
-    _load_to_bronze(df_orders, table_name="orders")
-    
-    return df_orders
+    try:
+        logger.info("Extract: orders")
+        s3_key = f"{S3_PREFIX}/orders/orders.csv"
+        df_orders = _read_csv_from_s3(s3_key)
+        
+        logger.info(f"Orders Rows: {df_orders.shape[0]}, Columns: {df_orders.shape[1]}")
+        
+        _load_to_bronze(df_orders, table_name="orders")
+        
+        return df_orders
+    except Exception as e:
+        logger.error(f"Error extracting orders: {str(e)}")
+        raise
 
 
 def extract_order_line_items() -> pd.DataFrame:
@@ -297,15 +303,19 @@ def extract_order_line_items() -> pd.DataFrame:
     Returns:
         pd.DataFrame: The order line item data.
     """
-    # TODO: Same pattern as extract_products()
-    s3_key = f"{S3_PREFIX}/order_line_items/order_line_items.csv"
-    df_order_line_items = _read_csv_from_s3(s3_key)
-    
-    print(f"Order Line Items Rows: {df_order_line_items.shape[0]}, Columns: {df_order_line_items.shape[1]}")
-    
-    _load_to_bronze(df_order_line_items, table_name="order_line_items")
-    
-    return df_order_line_items
+    try:
+        logger.info("Extract: order_line_items")
+        s3_key = f"{S3_PREFIX}/order_line_items/order_line_items.csv"
+        df_order_line_items = _read_csv_from_s3(s3_key)
+        
+        logger.info(f"Order Line Items Rows: {df_order_line_items.shape[0]}, Columns: {df_order_line_items.shape[1]}")
+        
+        _load_to_bronze(df_order_line_items, table_name="order_line_items")
+        
+        return df_order_line_items
+    except Exception as e:
+        logger.error(f"Error extracting order_line_items: {str(e)}")
+        raise
 
 
 # ---------------------------------------------------------------------------
@@ -326,15 +336,19 @@ def extract_reviews() -> pd.DataFrame:
     Returns:
         pd.DataFrame: The reviews data.
     """
-    # TODO: Same pattern, but use _read_jsonl_from_s3() instead of _read_csv_from_s3()
-    s3_key = f"{S3_PREFIX}/reviews/reviews.jsonl"
-    df_reviews = _read_jsonl_from_s3(s3_key)
-    
-    print(f"Reviews Rows: {df_reviews.shape[0]}, Columns: {df_reviews.shape[1]}")
-    
-    _load_to_bronze(df_reviews, table_name="reviews")
-    
-    return df_reviews
+    try:
+        logger.info("Extract: reviews")
+        s3_key = f"{S3_PREFIX}/reviews/reviews.jsonl"
+        df_reviews = _read_jsonl_from_s3(s3_key)
+        
+        logger.info(f"Reviews Rows: {df_reviews.shape[0]}, Columns: {df_reviews.shape[1]}")
+        
+        _load_to_bronze(df_reviews, table_name="reviews")
+        
+        return df_reviews
+    except Exception as e:
+        logger.error(f"Error extracting reviews: {str(e)}")
+        raise
 
 
 # ---------------------------------------------------------------------------
@@ -364,16 +378,19 @@ def extract_clickstream() -> pd.DataFrame:
     Returns:
         pd.DataFrame: The clickstream data.
     """
-    # TODO: Same pattern, but use _read_partitioned_parquet_from_s3()
-    # Note: pass a prefix (folder path), not a file key
-    s3_prefix = f"{S3_PREFIX}/clickstream/"
-    df_clickstream = _read_partitioned_parquet_from_s3(s3_prefix)
-    
-    print(f"Clickstream Rows: {df_clickstream.shape[0]}, Columns: {df_clickstream.shape[1]}")
-    
-    _load_to_bronze(df_clickstream, table_name="clickstream")
-    
-    return df_clickstream
+    try:
+        logger.info("Extract: clickstream")
+        s3_prefix = f"{S3_PREFIX}/clickstream/"
+        df_clickstream = _read_partitioned_parquet_from_s3(s3_prefix)
+        
+        logger.info(f"Clickstream Rows: {df_clickstream.shape[0]}, Columns: {df_clickstream.shape[1]}")
+        
+        _load_to_bronze(df_clickstream, table_name="clickstream")
+        
+        return df_clickstream
+    except Exception as e:
+        logger.error(f"Error extracting clickstream: {str(e)}")
+        raise
 
 
 # ---------------------------------------------------------------------------
@@ -391,14 +408,19 @@ def extract_payments() -> pd.DataFrame:
         pd.DataFrame: The payment data.
     """
 
-    s3_key = f"{S3_PREFIX}/payments/payment_transactions.csv"
-    df_payments = _read_csv_from_s3(s3_key)
-    
-    print(f"Payments Rows: {df_payments.shape[0]}, Columns: {df_payments.shape[1]}")
-    
-    _load_to_bronze(df_payments, table_name="payments")
-    
-    return df_payments
+    try:
+        logger.info("Extract: payments")
+        s3_key = f"{S3_PREFIX}/payments/payment_transactions.csv"
+        df_payments = _read_csv_from_s3(s3_key)
+        
+        logger.info(f"Payments Rows: {df_payments.shape[0]}, Columns: {df_payments.shape[1]}")
+        
+        _load_to_bronze(df_payments, table_name="payments")
+        
+        return df_payments
+    except Exception as e:
+        logger.error(f"Error extracting payments: {str(e)}")
+        raise
 
 def extract_inventory() -> pd.DataFrame:
     """
@@ -410,15 +432,19 @@ def extract_inventory() -> pd.DataFrame:
     Returns:
         pd.DataFrame: The inventory data.
     """
-
-    s3_key = f"{S3_PREFIX}/inventory/inventory_movements.csv"
-    df_inventory = _read_csv_from_s3(s3_key)
-    
-    print(f"Inventory Rows: {df_inventory.shape[0]}, Columns: {df_inventory.shape[1]}")
-    
-    _load_to_bronze(df_inventory, table_name="inventory")
-    
-    return df_inventory
+    try:
+        logger.info("Extract: inventory")
+        s3_key = f"{S3_PREFIX}/inventory/inventory_movements.csv"
+        df_inventory = _read_csv_from_s3(s3_key)
+        
+        logger.info(f"Inventory Rows: {df_inventory.shape[0]}, Columns: {df_inventory.shape[1]}")
+        
+        _load_to_bronze(df_inventory, table_name="inventory")
+        
+        return df_inventory
+    except Exception as e:
+        logger.error(f"Error extracting inventory: {str(e)}")
+        raise
 
 def extract_marketing() -> pd.DataFrame:
     """
@@ -431,14 +457,19 @@ def extract_marketing() -> pd.DataFrame:
         pd.DataFrame: The marketing data.
     """
 
-    s3_key = f"{S3_PREFIX}/marketing/marketing_events.jsonl"
-    df_marketing = _read_jsonl_from_s3(s3_key)
-    
-    print(f"Marketing Rows: {df_marketing.shape[0]}, Columns: {df_marketing.shape[1]}")
-    
-    _load_to_bronze(df_marketing, table_name="marketing")
-    
-    return df_marketing
+    try:
+        logger.info("Extract: marketing")
+        s3_key = f"{S3_PREFIX}/marketing/marketing_events.jsonl"
+        df_marketing = _read_jsonl_from_s3(s3_key)
+        
+        logger.info(f"Marketing Rows: {df_marketing.shape[0]}, Columns: {df_marketing.shape[1]}")
+        
+        _load_to_bronze(df_marketing, table_name="marketing")
+        
+        return df_marketing
+    except Exception as e:
+        logger.error(f"Error extracting marketing: {str(e)}")
+        raise
 
 def extract_searc_events() -> pd.DataFrame:
     """
@@ -451,14 +482,19 @@ def extract_searc_events() -> pd.DataFrame:
         pd.DataFrame: The search events data.
     """
 
-    s3_prefix = f"{S3_PREFIX}/search_events/search_events.jsonl"
-    df_search_events = _read_jsonl_from_s3(s3_prefix)
-    
-    print(f"Search Events Rows: {df_search_events.shape[0]}, Columns: {df_search_events.shape[1]}")
-    
-    _load_to_bronze(df_search_events, table_name="search_events")
-    
-    return df_search_events
+    try:
+        logger.info("Extract: search_events")
+        s3_prefix = f"{S3_PREFIX}/search_events/search_events.jsonl"
+        df_search_events = _read_jsonl_from_s3(s3_prefix)
+        
+        logger.info(f"Search Events Rows: {df_search_events.shape[0]}, Columns: {df_search_events.shape[1]}")
+        
+        _load_to_bronze(df_search_events, table_name="search_events")
+        
+        return df_search_events
+    except Exception as e:
+        logger.error(f"Error extracting search_events: {str(e)}")
+        raise
 
 def extract_abandoned_carts() -> pd.DataFrame:
     """
@@ -471,16 +507,21 @@ def extract_abandoned_carts() -> pd.DataFrame:
         pd.DataFrame: The abandoned carts data.
     """
 
-    s3_key = f"{S3_PREFIX}/abandoned_carts/abandoned_carts.jsonl"
-    df_abandoned_carts = _read_jsonl_from_s3(s3_key)
-    
-    print(f"Abandoned Carts Rows: {df_abandoned_carts.shape[0]}, Columns: {df_abandoned_carts.shape[1]}")
-    
-    df_abandoned_carts['items'] = df_abandoned_carts['items'].apply(json.dumps)
-    
-    _load_to_bronze(df_abandoned_carts, table_name="abandoned_carts")
-    
-    return df_abandoned_carts
+    try:
+        logger.info("Extract: abandoned_carts")
+        s3_key = f"{S3_PREFIX}/abandoned_carts/abandoned_carts.jsonl"
+        df_abandoned_carts = _read_jsonl_from_s3(s3_key)
+        
+        logger.info(f"Abandoned Carts Rows: {df_abandoned_carts.shape[0]}, Columns: {df_abandoned_carts.shape[1]}")
+        
+        df_abandoned_carts['items'] = df_abandoned_carts['items'].apply(json.dumps)
+        
+        _load_to_bronze(df_abandoned_carts, table_name="abandoned_carts")
+        
+        return df_abandoned_carts
+    except Exception as e:
+        logger.error(f"Error extracting abandoned_carts: {str(e)}")
+        raise
 
 def extract_interactions() -> pd.DataFrame:
     """
@@ -493,14 +534,19 @@ def extract_interactions() -> pd.DataFrame:
         pd.DataFrame: The customer interactions data.
     """
 
-    s3_key = f"{S3_PREFIX}/interactions/"
-    df_interactions = _read_partitioned_parquet_from_s3(s3_key)
-    
-    print(f"Interactions Rows: {df_interactions.shape[0]}, Columns: {df_interactions.shape[1]}")
-    
-    _load_to_bronze(df_interactions, table_name="interactions")
-    
-    return df_interactions
+    try:
+        logger.info("Extract: interactions")
+        s3_key = f"{S3_PREFIX}/interactions/"
+        df_interactions = _read_partitioned_parquet_from_s3(s3_key)
+        
+        logger.info(f"Interactions Rows: {df_interactions.shape[0]}, Columns: {df_interactions.shape[1]}")
+        
+        _load_to_bronze(df_interactions, table_name="interactions")
+        
+        return df_interactions
+    except Exception as e:
+        logger.error(f"Error extracting interactions: {str(e)}")
+        raise
 
 # ---------------------------------------------------------------------------
 # Main function
@@ -517,9 +563,9 @@ def extract_all() -> dict[str, pd.DataFrame]:
     Returns:
         dict: A dictionary {table_name: DataFrame} for each extracted table.
     """
-    print(f"\n{'='*60}")
-    print(f"  🥉 EXTRACT → Bronze ({BRONZE_SCHEMA})")
-    print(f"{'='*60}\n")
+    logger.info(f"\n{'='*60}")
+    logger.info(f"  🥉 EXTRACT → Bronze ({BRONZE_SCHEMA})")
+    logger.info(f"{'='*60}\n")
 
     results = {}
 
@@ -539,7 +585,7 @@ def extract_all() -> dict[str, pd.DataFrame]:
     results['abandoned_carts'] = extract_abandoned_carts()
     results['interactions'] = extract_interactions()
 
-    print(f"\n  ✅ Extraction complete — {len(results)} tables loaded into {BRONZE_SCHEMA}")
+    logger.info(f"\n  ✅ Extraction complete — {len(results)} tables loaded into {BRONZE_SCHEMA}")
     return results
 
 
