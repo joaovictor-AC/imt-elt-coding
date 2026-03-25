@@ -98,11 +98,17 @@ Then go to **GitHub → your repo → Actions tab** to see it run.
 ### Principle
 
 In production, you need to know:
-- ✅ Did the pipeline run successfully?
-- ⏱ How long did each step take?
-- 📊 How many rows were processed?
-- ❌ What failed and why?
+- ✅ Did the pipeline run successfully? Yes
+- ⏱ How long did each step take? in total 602.6 [seconds]
+extract took 274.71 seconds
+transform took 15.51 seconds
+gold took 5.62 seconds
+- 📊 How many rows were processed? 
+extract :907365
+transform: clean data
+gold: 5090 in 3 tables
 
+- ❌ What failed and why? nothing failed, everything was well coded (at least the version we uploaded to Git)
 ### 2.1 Add execution metrics
 
 📁 **File:** `src/monitoring.py`
@@ -176,9 +182,9 @@ Ensure your repo is clean and professional:
 - [Check] `.gitignore` is complete (no `.env`, `__pycache__`, `venv/`, `*.pyc`)
 - [Check] `requirements.txt` has all dependencies pinned
 - [ ] `README.md` has clear setup and run instructions
-- [ ] All code follows consistent formatting (run `black src/` if available)
-- [ ] No hardcoded credentials anywhere
-- [ ] No unused imports or dead code
+- [Check] All code follows consistent formatting (run `black src/` if available)
+- [Check] No hardcoded credentials anywhere
+- [Check] No unused imports or dead code
 
 ### 3.2 Write a comprehensive README
 
