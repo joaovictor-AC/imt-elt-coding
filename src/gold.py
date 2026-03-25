@@ -99,7 +99,7 @@ def create_daily_revenue():
     # Then: pd.read_sql() → _create_gold_table()
     try:
         logger.info("  📊 Gold: daily_revenue")
-        
+
         query = f"""
             SELECT
                 DATE(o.order_date) AS order_date,
@@ -119,7 +119,6 @@ def create_daily_revenue():
     except Exception as e:
         logger.error(f"Error creating daily_revenue: {str(e)}")
         raise
-
 
 
 def create_product_performance():
@@ -144,7 +143,7 @@ def create_product_performance():
     """
     try:
         logger.info("  🏆 Gold: product_performance")
-        
+
         query = f"""
             SELECT
                 ol.product_id,
@@ -199,7 +198,7 @@ def create_customer_ltv():
     """
     try:
         logger.info("  💰 Gold: customer_ltv")
-        
+
         query = f"""
             SELECT
                 o.user_id,
@@ -250,9 +249,9 @@ def create_gold_layer():
         logger.error(f"Error creating gold layer: {str(e)}")
         raise
 
+
 # ---------------------------------------------------------------------------
 # Entry point
 # ---------------------------------------------------------------------------
 if __name__ == "__main__":
     create_gold_layer()
-    

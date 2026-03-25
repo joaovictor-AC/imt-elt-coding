@@ -40,8 +40,9 @@ class StepMetrics:
         step.end_time = datetime.now(timezone.utc).isoformat()
         step.rows_processed = 53188
     """
+
     step_name: str
-    status: str = "pending"                  # pending → running → success / failed
+    status: str = "pending"  # pending → running → success / failed
     start_time: str = ""
     end_time: str = ""
     duration_seconds: float = 0.0
@@ -60,6 +61,7 @@ class PipelineReport:
         report.add_step(step_metrics)
         report.save("pipeline_report.json")
     """
+
     pipeline_name: str = "KICKZ EMPIRE ELT"
     run_id: str = field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
     steps: list = field(default_factory=list)
@@ -85,5 +87,5 @@ class PipelineReport:
         #
         # Hint:
         with open(filepath, "w") as f:
-           f.write(self.to_json())
+            f.write(self.to_json())
         pass

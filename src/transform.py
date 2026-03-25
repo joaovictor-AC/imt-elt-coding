@@ -33,13 +33,13 @@ def _drop_internal_columns(df: pd.DataFrame) -> pd.DataFrame:
         Columns before: ['product_id', 'brand', '_internal_cost_usd', '_supplier_id']
         Columns after:  ['product_id', 'brand']
     """
-    cols_to_drop = [col for col in df.columns if col.startswith('_')]
-    
+    cols_to_drop = [col for col in df.columns if col.startswith("_")]
+
     df_clean = df.drop(columns=cols_to_drop)
-    
+
     if cols_to_drop:
         logger.info(f"      Dropped {len(cols_to_drop)} internal columns")
-    
+
     return df_clean
 
 
@@ -79,18 +79,18 @@ def transform_products() -> pd.DataFrame:
         df = _drop_internal_columns(df)
 
         # Step 2
-        if 'tags' in df.columns:
-            df['tags'] = df['tags'].str.replace('|', ', ')
+        if "tags" in df.columns:
+            df["tags"] = df["tags"].str.replace("|", ", ")
 
         # Step 3
-        if 'price_usd' in df.columns:
-            df = df[df['price_usd'] > 0]
+        if "price_usd" in df.columns:
+            df = df[df["price_usd"] > 0]
 
         # Step 4
-        if 'is_active' in df.columns:
-            df['is_active'] = df['is_active'].astype(bool)
-        if 'is_hype_product' in df.columns:
-            df['is_hype_product'] = df['is_hype_product'].astype(bool)
+        if "is_active" in df.columns:
+            df["is_active"] = df["is_active"].astype(bool)
+        if "is_hype_product" in df.columns:
+            df["is_hype_product"] = df["is_hype_product"].astype(bool)
 
         # Step 5
         _load_to_silver(df, "dim_products")
@@ -127,12 +127,12 @@ def transform_users() -> pd.DataFrame:
         df = _drop_internal_columns(df)
 
         # Step 2
-        if 'loyalty_tier' in df.columns:
-            df['loyalty_tier'] = df['loyalty_tier'].fillna('none')
+        if "loyalty_tier" in df.columns:
+            df["loyalty_tier"] = df["loyalty_tier"].fillna("none")
 
         # Step 3
-        if 'email' in df.columns:
-            df['email'] = df['email'].str.lower().str.strip()
+        if "email" in df.columns:
+            df["email"] = df["email"].str.lower().str.strip()
 
         # Step 4
         _load_to_silver(df, "dim_users")
@@ -167,17 +167,24 @@ def transform_orders() -> pd.DataFrame:
         df = _drop_internal_columns(df)
 
         # Step 2
-        valid_statuses = ['delivered', 'shipped', 'processing', 'returned', 'cancelled', 'chargeback']
-        if 'status' in df.columns:
-            df = df[df['status'].isin(valid_statuses)]
+        valid_statuses = [
+            "delivered",
+            "shipped",
+            "processing",
+            "returned",
+            "cancelled",
+            "chargeback",
+        ]
+        if "status" in df.columns:
+            df = df[df["status"].isin(valid_statuses)]
 
         # Step 3
-        if 'order_date' in df.columns:
-            df['order_date'] = pd.to_datetime(df['order_date'])
+        if "order_date" in df.columns:
+            df["order_date"] = pd.to_datetime(df["order_date"])
 
         # Step 4
-        if 'coupon_code' in df.columns:
-            df['coupon_code'] = df['coupon_code'].fillna('')
+        if "coupon_code" in df.columns:
+            df["coupon_code"] = df["coupon_code"].fillna("")
 
         # Step 5:
         _load_to_silver(df, "fct_orders")
@@ -209,16 +216,22 @@ def transform_order_line_items() -> pd.DataFrame:
         df = _drop_internal_columns(df)
 
         # Step 2
-        if 'quantity' in df.columns:
-            df = df[df['quantity'] > 0]
+        if "quantity" in df.columns:
+            df = df[df["quantity"] > 0]
 
         # Step 3
-        if 'line_total_usd' in df.columns and 'unit_price_usd' in df.columns and 'quantity' in df.columns:
-            expected_total = df['unit_price_usd'] * df['quantity']
-            difference = abs(df['line_total_usd'] - expected_total)
+        if (
+            "line_total_usd" in df.columns
+            and "unit_price_usd" in df.columns
+            and "quantity" in df.columns
+        ):
+            expected_total = df["unit_price_usd"] * df["quantity"]
+            difference = abs(df["line_total_usd"] - expected_total)
             bad_rows = difference > 0.01
             if bad_rows.sum() > 0:
-                logger.info(f"      Removed {bad_rows.sum()} rows with incorrect line totals")
+                logger.info(
+                    f"      Removed {bad_rows.sum()} rows with incorrect line totals"
+                )
             df = df[~bad_rows]
 
         # Step 4
@@ -247,7 +260,9 @@ def transform_all() -> dict[str, pd.DataFrame]:
     results["fct_orders"] = transform_orders()
     results["fct_order_lines"] = transform_order_line_items()
 
-    logger.info(f"\n  ✅ Transformation complete — {len(results)} tables in {SILVER_SCHEMA}")
+    logger.info(
+        f"\n  ✅ Transformation complete — {len(results)} tables in {SILVER_SCHEMA}"
+    )
     return results
 
 

@@ -6,7 +6,7 @@ TP1 — Step 0: Configure the database connection.
 """
 
 import os
-from urllib.parse import quote_plus #library for special characters 
+from urllib.parse import quote_plus  # library for special characters
 from sqlalchemy import create_engine, text
 from dotenv import load_dotenv
 
@@ -39,11 +39,11 @@ def get_engine():
     Docs:
         https://docs.sqlalchemy.org/en/20/core/engines.html
     """
-    #special characters
+    # special characters
     user_escaped = quote_plus(RDS_USER)
     password_escaped = quote_plus(RDS_PASSWORD)
-    
-    #URL
+
+    # URL
     url = f"postgresql://{user_escaped}:{password_escaped}@{RDS_HOST}:{RDS_PORT}/{RDS_DATABASE}"
     return create_engine(url)
 
@@ -61,7 +61,7 @@ def test_connection():
         with engine.connect() as conn:
             conn.execute(text("SELECT 1"))
         return True
-        
+
     except Exception as e:
         print(f"Error: {e}")
         return False
