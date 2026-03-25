@@ -93,7 +93,6 @@ Create a `.env` file based on the following template:
     AWS_ACCESS_KEY_ID=your-access-key
     AWS_SECRET_ACCESS_KEY=your-secret-key
 
-⚠️ Never commit your `.env` file. Use a `.env.example` file with placeholders instead.
 
 ### Test database connection
 
@@ -135,17 +134,33 @@ Tests are implemented using `pytest`.
 
 ### Run all tests
 
-    pytest tests/ -v --cov=src --cov-report=html
+```
+pytest tests/ -v --cov=src --cov-report=html
+pytest tests/ -v --cov=src --cov-report=term-missing
+```
 
-This command:
-- runs all tests in the `tests/` directory  
-- enables verbose output  
-- computes code coverage for the `src/` module  
-- generates an HTML coverage report  
+These commands:
+
+* run all tests in the `tests/` directory
+* enable verbose output (`-v`) to display detailed test results
+* measure code coverage on the `src/` module
+
+The first command:
+
+* generates a full HTML coverage report
+* creates a folder `htmlcov/` with a detailed visualization of coverage
+
+The second command:
+
+* displays missing coverage directly in the terminal
+* highlights which lines are not covered by tests (`term-missing`)
 
 ### View coverage report
 
+```
     htmlcov/index.html
+    in Powershell: Start-Process htmlcov/index.html
+```
 
 ### Test scope
 
@@ -168,9 +183,9 @@ Instead, it is validated separately with:
 
 | Name | Role |
 |------|------|
-| ARAÚJO COSTA João | Développeur |
-| CÁCERES Alejandro | Développeur |
-| FLICHY Astrid | Développeur |
+| ARAÚJO COSTA João | Data processing and quality, Monitoring |
+| CÁCERES Alejandro | Database and infrastructure, Testing & CI |
+| FLICHY Astrid | Pipeline development, Documentation |
 
 ---
 
