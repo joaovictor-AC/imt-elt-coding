@@ -44,6 +44,130 @@ The pipeline follows a layered ELT architecture:
 - Silver: cleaned and standardized data  
 - Gold: aggregated and analytics-ready tables  
 
+### Project Structure
+
+```
+imt-elt-coding-master/
+│
+├── pipeline.py              # Main pipeline orchestrator
+├── requirements.txt         # Python dependencies
+├── README.md                # Project documentation
+│
+├── src/                     # Core pipeline logic
+│   ├── __init__.py
+│   ├── database.py          # PostgreSQL connection & queries
+│   ├── extract.py           # Data extraction (Bronze layer)
+│   ├── transform.py         # Data cleaning & transformation (Silver)
+│   ├── gold.py              # Aggregations & business tables (Gold)
+│   ├── monitoring.py        # Pipeline monitoring & reporting
+│   ├── logger.py            # Logging utilities
+│   └── check_files.ipynb    # Data exploration notebook
+│
+├── tests/                   # Unit tests (pytest)
+│   ├── __init__.py
+│   ├── conftest.py          # Fixtures and mocks
+│   ├── test_extract.py
+│   ├── test_transform.py
+│   └── test_gold.py
+│
+├── docs/                    # Additional documentation
+│   ├── ARCHITECTURE.md
+│   └── DATA_PRESENTATION.md
+│
+└── .github/workflows/
+    └── ci.yml               # CI pipeline (tests automation)
+```
+
+### Dataset
+
+The project uses a synthetic e-commerce dataset stored in AWS S3.
+
+#### Source
+
+* Data is stored in an S3 bucket
+* Accessed using AWS credentials defined in the `.env` file
+* Prefix: `raw/`
+
+---
+
+#### Data Domains
+
+The dataset is composed of multiple interconnected tables representing an online retail system:
+
+##### Core business data
+
+* **products**
+  Product catalog including price, category, and tags
+
+* **users**
+  Customer information (cleaned in Silver to remove sensitive data)
+
+* **orders**
+  Customer orders with status, timestamps, and totals
+
+* **order_line_items**
+  Detailed breakdown of each order (products, quantities, prices)
+
+* **payments**
+  Payment transactions linked to orders
+
+---
+
+##### Operational and behavioral data
+
+* **inventory**
+  Stock levels and product availability
+
+* **marketing**
+  Campaign and acquisition data
+
+* **search_events**
+  User search activity on the platform
+
+* **abandoned_carts**
+  Carts not converted into purchases
+
+* **reviews**
+  Customer feedback and ratings
+
+* **interactions**
+  User interactions with the platform
+
+* **clickstream**
+  Navigation and browsing behavior
+
+---
+
+#### Data Usage in the Pipeline
+
+* Bronze layer:
+
+  * stores raw data as ingested from S3
+  * no transformation applied
+
+* Silver layer:
+
+  * cleans and standardizes each dataset
+  * enforces data quality rules
+  * removes invalid or inconsistent records
+
+* Gold layer:
+
+  * aggregates data into business metrics
+  * examples:
+
+    * daily revenue
+    * product performance
+    * customer lifetime value
+
+---
+
+#### Key Characteristics
+
+* Multi-table relational dataset
+* Mix of transactional and behavioral data
+* Designed to simulate real-world e-commerce analytics use cases
+
 ---
 
 ## 3. Setup Instructions
