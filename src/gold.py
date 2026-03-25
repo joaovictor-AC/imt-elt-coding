@@ -10,6 +10,8 @@ from src.database import get_engine, SILVER_SCHEMA, GOLD_SCHEMA
 # TODO (TP3): Import your logger and create a module-level logger
 #   1. from src.logger import get_logger
 #   2. logger = get_logger(__name__)
+from src.logger import get_logger
+logger = get_logger(__name__)
 
 
 def _read_silver(table_name: str) -> pd.DataFrame:
@@ -30,7 +32,7 @@ def _create_gold_table(df: pd.DataFrame, table_name: str, if_exists: str = "repl
         index=False,
     )
     # TODO (TP3): Replace with logger.info(...)
-    print(f"    ✅ {GOLD_SCHEMA}.{table_name} — {len(df)} rows")
+    logger.info(f"    ✅ {GOLD_SCHEMA}.{table_name} — {len(df)} rows")
 
 
 def _create_gold_view(view_name: str, sql: str):
@@ -42,13 +44,13 @@ def _create_gold_view(view_name: str, sql: str):
         conn.execute(text(f"CREATE VIEW {full_name} AS {sql}"))
         conn.commit()
     # TODO (TP3): Replace with logger.info(...)
-    print(f"    ✅ View {full_name} created")
+    logger.info(f"    ✅ View {full_name} created")
 
 
 def create_daily_revenue():
     """Create gold.daily_revenue — daily revenue."""
     # TODO (TP3): Replace print with logger.info, add try/except + logger.error + raise
-    print("  📊 Gold: daily_revenue")
+    logger.info("  📊 Gold: daily_revenue")
 
     # TODO: Create daily_revenue using SQL
     # Write a SQL query that joins fct_orders + fct_order_lines,
@@ -76,7 +78,7 @@ def create_daily_revenue():
 def create_product_performance():
     """Create gold.product_performance — metrics per product."""
     # TODO (TP3): Replace print with logger.info, add try/except + logger.error + raise
-    print("  🏆 Gold: product_performance")
+    logger.info("  🏆 Gold: product_performance")
 
     # TODO: Create the product_performance table
     # Join fct_order_lines with dim_products (and filter via fct_orders)
@@ -107,7 +109,7 @@ def create_product_performance():
 def create_customer_ltv():
     """Create gold.customer_ltv — Lifetime Value per customer."""
     # TODO (TP3): Replace print with logger.info, add try/except + logger.error + raise
-    print("  💰 Gold: customer_ltv")
+    logger.info("  💰 Gold: customer_ltv")
 
     # TODO: Create the customer_ltv table
     # Join fct_orders with dim_users
@@ -140,9 +142,9 @@ def create_customer_ltv():
 
 def create_gold_layer():
     """Create all tables/views for the Gold layer."""
-    print(f"\n{'='*60}")
-    print(f"  🥇 GOLD Layer ({GOLD_SCHEMA})")
-    print(f"{'='*60}\n")
+    logger.info(f"\n{'='*60}")
+    logger.info(f"  🥇 GOLD Layer ({GOLD_SCHEMA})")
+    logger.info(f"{'='*60}\n")
 
     # TODO: Call each Gold creation function
     # There are 3 functions: daily_revenue, product_performance, customer_ltv
@@ -150,7 +152,7 @@ def create_gold_layer():
     create_product_performance()
     create_customer_ltv()
 
-    print(f"\n  ✅ Gold layer created in {GOLD_SCHEMA}")
+    logger.info(f"\n  ✅ Gold layer created in {GOLD_SCHEMA}")
 
 
 if __name__ == "__main__":
