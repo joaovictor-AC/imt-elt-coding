@@ -287,6 +287,7 @@ Write tests that verify your error handling works correctly. Use `@patch` with `
 ```bash
 pytest tests/ -v --cov=src --cov-report=html
 open htmlcov/index.html
+in powershell: Start-Process htmlcov/index.html
 ```
 
 ### 4.2 Identify untested code
